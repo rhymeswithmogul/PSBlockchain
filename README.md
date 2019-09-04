@@ -1,5 +1,6 @@
+
 # PSBlockchain
-This module, and its [[PSBlockchain](https://raw.githubusercontent.com/rhymeswithmogul/PSBlockchain/master/en-US/about_PSBlockchain.help.txt)] and [[PSBlockchainBlock](https://raw.githubusercontent.com/rhymeswithmogul/PSBlockchain/master/en-US/about_PSBlockchainBlock.help.txt)] classes, represent a blockchain.  The classes can be used at the command line, or integrated into your own scripts, modules, or apps.  It is fully compatible with Windows PowerShell 5 and all versions of PowerShell Core.
+This module, and its [`[PSBlockchain]`](https://github.com/rhymeswithmogul/PSBlockchain/blob/master/en-us/about_PSBlockchain.help.txt) and [`[PSBlockchainBlock]`](https://github.com/rhymeswithmogul/PSBlockchain/blob/master/en-us/about_PSBlockchainBlock.help.txt) classes, represent a blockchain.  It is compatible with Windows PowerShell 5 as well as PowerShell Core.
 
 ## Quick Example
 ````powershell
