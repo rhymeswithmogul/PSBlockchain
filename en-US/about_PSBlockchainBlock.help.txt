@@ -1,0 +1,209 @@
+TOPIC
+    about_PSBlockchainBlock
+
+
+CLASS
+    PSBlockchainBlock
+
+
+INHERITANCE
+    System.Object
+        PSBlockchainBlock : about_PSBlockchainBlock.help.txt
+
+
+SHORT DESCRIPTION
+    The PSBlockchainBlock class represents a block in a [PSBlockchain].
+
+
+LONG DESCRIPTION
+    The PSBlockchain module and this PSBlockchainBlock class represent the
+    blocks in a blockchain.  Though PSBlockchain does most of the work for
+    you, you will probably need or want to use many of the methods in this
+    class to store and manipulate data.   Also, in advanced scenarios, you
+    may choose to instantiate an instance of this class to create your own
+    blocks.
+
+
+SPECIFICATION
+    Blocks of type [PSBlockchainBlock] have the following properties:
+
+        1. A version number.
+            Currently, this is hardcoded as version 1.  Any future changes
+            to this class that will break compatibility will increase this
+            version number, and there will be appropriate methods to deal
+            with version 1 chains and (for example) version 2 chains.
+       
+        2. An block ID number.
+            This number identifies each block.  It is an unsigned 64-bit
+            integer, and is monotonically increasing. The genesis block is
+            always block 0, and blocks added to the chain will have an ID
+            number one higher than the previous block.
+       
+        3. A timestamp.
+            The timestamp corresponds to the exact date and time that this
+            block was created.  Timestamps are stored as a DateTime object
+            which should be accurate to the millisecond, provided there is
+            operating system support for that.
+
+            When the block is displayed on-screen, timestamps are shown as
+            file times: "a 64-bit value that represents the number of 100-
+            nanosecond intervals  […]  elapsed since 12:00 A.M. January 1,
+            1601 Coordinated Universal Time (UTC)."
+            http://docs.microsoft.com/en-us/windows/win32/sysinfo/file-times
+
+        4. A 32-character alphanumeric nonce to add some randomness.
+       
+        5. The SHA-256 hash of the previous block's properties and data,
+           stored as text.
+       
+        6. Arbitrary user-specified content.
+            The internal representation is left up to PowerShell; however,
+            when hashing, any content is internally converted to a string
+            If that means anything to you,  you may want to store content
+            as a JSON or XML string.
+       
+        7. This SHA-256 hash of this block's other properties and data,
+           stored as text.
+
+
+CONSTRUCTORS
+    PSBlockchainBlock()
+        This will create a new block with no content.  You may assign
+        content later.
+    
+    PSBlockchainBlock( [PScustomObject]$obj )
+        This will create a new block with the specified content.
+
+
+METHODS
+    There are many methods that can manipulate the data inside a block.
+    Note that just because this class gives you these methods, you may not
+    want to call them.   For example, in most cases, adding blocks to the
+    chain with arbitrary timestamps may be undesirable.
+
+    [UInt32] GetVersion()
+        This returns the internal version number of the PSBlockchainBlock
+        specification that the block conforms to. Currently, only version
+        1 is defined.
+
+    static [UInt32[]] SupportedVersions()
+        This static method returns all [PSBlockchainBlock] versions
+        supported by this module.
+    
+    [UInt64] GetBlockID()
+        This returns the block ID of this block.
+
+    [void] SetBlockID( [UInt64]$NewBlockID )
+        This sets the block ID of this block to a specific number.   While
+        you can set it to whatever you want, it will likely be overwritten
+        when it is added to a [PSBlockchain].
+    
+    [DateTime] GetTimestamp()
+        This returns the timestamp of the block. By default, the timestamp
+        is the exact date and time that the block was created.
+
+    [void] SetTimestamp()
+    [void] SetTimestamp( [DateTime]$NewTimestamp )
+        Both of these methods change the timestamp of a block. When called
+        with no parameters, the timestamp is set to now.  When called with
+        a [DateTime] parameter, it is set to a specific time.
+ 
+    [String] GetHash()
+        Returns the stored hash of this block.
+
+    [String] GetPreviousBlockHash()
+        Returns the stored hash of this block's ancestor.
+
+    [void] SetPreviousBlock( [PSBlockchainBlock]$NewPreviousBlock )
+        This method sets this block's stored hash of the previous block to
+        the hash of the provided block, and sets this block's ID number to
+        one greater than the previous block's ID.  For example:
+            PS C:\> $block2.GetBlockID()
+            5
+            PS C:\> $block.SetBlockID(42)
+            PS C:\> $block.SetPreviousBlock($block2)
+            PS C:\> $block.GetBlockID()
+            43
+
+    [Bool] IsGenesisBlock()
+        This method returns $True if this block does not have a previous
+        block hash stored. In a proper blockchain, only the genesis block
+        will not have a previous block hash value stored.
+    
+    [String] GetNonce()
+        Returns this block's nonce.
+    
+    [PSCustomObject] GetContent()
+        Returns the stored content of this block.
+    
+    [void] SetContent( [PSCustomObject]$obj )
+        Stores the specified content inside this block.
+
+    [bool] Verify()
+        This method verifies the block's integrity.  The proper hash value
+        is calculated, and compared to the stored value.
+
+    [String] ToString()
+        This returns the block as a string.  The string looks like JSON or
+        a PowerShell hashtable.
+        
+        WARNING:  Do not use ToString() to save a block to disk; instead,
+        pipe the block to a type-preserving cmdlet like ConvertTo-JSON or
+        Export-CliXml instead.
+
+    [String] ToCompressedString()
+        Like ToString(), this returns the block as a slightly-smaller JSON
+        string. Property names are shrunk to one character, and whitespace
+        is removed.
+
+        WARNING: Do not use ToString() to save a block to disk; instead,
+        pipe the block to a type-preserving cmdlet like ConvertTo-JSON or
+        Export-CliXml instead.
+
+    [int] CompareTo( [PSBlockchainBlock]$that )
+        Checks to see if two blocks are equal, just for the sole purpose of
+        implementing IComparable and letting users use comparison operators
+        (i.e., -lt). In this case, equality is defined as two blocks having
+        the same hash value.  If two blocks have a different hash, they are
+        then sorted by ID number.
+
+
+EXAMPLES
+    These examples are provided for illustrative purposes only.  Using a
+    blockchain, by itself, will not make something magically secure.
+
+    PS C:\> $block = [PSBlockchainBlock]::new()
+    PS C:\> $block
+    Name           Value
+    ----           -----
+    Version        1
+    BlockID        0
+    Timestamp      132120417020616800
+    PrevBlockHash                  
+    Nonce          ZCrMthzxLWkmTeEnURcfAPoNdvlSHiOq
+    Content                        
+    Hash           9094699ACA562410090FDED8C6DF6AB1261BB9419B6E9574342CE2380E044462
+
+    PS C:\> $block.SetContent("foo")
+    Name           Value
+    ----           -----
+    Version        1
+    BlockID        0
+    Timestamp      132120417020616800
+    PrevBlockHash                  
+    Nonce          ZCrMthzxLWkmTeEnURcfAPoNdvlSHiOq
+    Content        foo
+    Hash           EAD89F5564552BE2164FB058E5FDE9251A953B7D56E108B20D3A44677A59E3E6
+
+
+KEYWORDS
+    Blockchain
+    Cryptocoin
+    Cryptocurrency
+    PowerShell
+    PowerShell Core
+    Windows PowerShell
+
+SEE ALSO
+    about_Classes
+    about_PSBlockchain

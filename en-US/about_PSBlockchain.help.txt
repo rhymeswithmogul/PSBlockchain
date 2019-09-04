@@ -1,0 +1,214 @@
+﻿TOPIC
+    about_PSBlockchain
+
+
+CLASS
+    PSBlockchain
+
+
+INHERITANCE
+    System.Object
+        PSBlockChain : about_PSBlockchain.help.txt
+
+
+SHORT DESCRIPTION
+    The PSBlockchain class represents a blockchain.
+
+
+LONG DESCRIPTION
+    The PSBlockchain module and PSBlockchain and PSBlockchainBlock classes
+    represent a blockchain and its blocks. You can instantiate a member of
+    this class to create, append to, and verify blockchains.
+
+    Blockchains are only stored in memory.   To export it to a file so you
+    can load it at a later date, don't use Out-File; instead, use a cmdlet
+    that preserves data types, such as ConvertTo-JSON or Export-CliXml.
+
+
+SPECIFICATION
+    PSBlockchain implements a blockchain.  Blocks are stored internally as
+    a [System.Collections.ArrayList] of [PSBlockchainBlock]s.
+
+    The blockchain also has an internal version number, which is currently
+    1.  Additions or other breaking changes to the PSBlockchain class that
+    may cause incompatibility will increment the version number.
+
+ 
+CONSTRUCTORS
+    PSBlockchain()
+        This will create a new blockchain with only a genesis block, which
+        will have no content.
+    
+    PSBlockchain( [System.Object]$obj )
+        This will create a new blockchain with only a genesis block,  with
+        the specified content in the genesis block.  If you are writing an
+        app using this class, you may wish to store some app-specific data
+        or settings here.
+
+
+METHODS
+    [UInt32] GetVersion()
+        This returns the version number of the PSBlockchain specification
+        that the chain conforms to.  Currently, only version 1 is defined.
+
+    static [UInt32[]] SupportedVersions()
+        This static method returns all [PSBlockchain] versions supported
+        by this module.  Currently, only version 1 is defined, so this is
+        largely useless.
+    
+    [PSBlockchainBlock] GetBlock( [UInt64]$BlockID )
+        This returns the specified block from the chain.  If the $BlockID
+        specified is greater than the chain length, $null is returned and
+        no exception is thrown.
+
+    [PSBlockchainBlock] GetGenesisBlock()
+        This always returns block ID 0, the genesis block.
+
+    [PSBlockchainBlock] GetLastBlock()
+        This returns the most recent block to be added to the chain.
+
+    [UInt64] GetLength()
+    [UInt64] Count() 
+        These identical methods return the number of blocks on the chain.
+        "Length" is often used with blockchains, but Count() may be more
+        intuitive for PowerShell developers.
+
+    [void] Add( [System.Object]$obj )
+        This method will create a new block with the provided content, and
+        add it to the chain.
+    
+    [void] AddBlock( [PSBlockchainBlock]$NewBlock )
+        This will add a predefined block to the chain. In the process, the
+        block's ID number and previous hash will be overwritten, and a new
+        hash generated.
+
+    [bool] Verify()
+        This method verifies the chain's integrity.  The stored hash value
+        in each block (except for the genesis block) is compared with each
+        previous block's stored hash value; and, each block's hash is also
+        checked for correctness.  If the entire chain validates, then True
+        is returned.  If there are any inconsistencies in the chain, False
+        is returned along with an error message showing which block failed
+        validation.
+
+    [String] ToString()
+        This returns the entire chain as a string.   The string looks like
+        JSON or a PowerShell hashtable.   This function is primarily meant
+        for debugging purposes, as calling this method on a [PSBlockchain]
+        thousands of blocks long will quickly flood your terminal.
+        
+        WARNING:  Do not use ToString() to save a chain to disk or prepare
+        to send it over a network;  instead, pipe the entire chain through
+        a type-preserving cmdlet like ConvertTo-JSON or Export-CliXml.
+
+    [String] ToCompressedString()
+        This method returns the entire chain as a slightly-smaller string.
+        Compared to the ToString() method,  property names are reduced to
+        one character, and whitespace is removed.
+
+        WARNING:  Do not use ToCompressedString() to save a chain to disk,
+        or prepare to send it over a network.   Instead, pipe the chain to
+        a type-preserving cmdlet like ConvertTo-JSON or Export-CliXml.
+
+
+EXAMPLES
+    These examples are provided for illustrative purposes only. By itself,
+    a blockchain is not a "magic bullet" that will suddenly make your app
+    secure.
+
+    EXAMPLE 1: MAKE YOUR OWN CRYPTOCURRENCY
+        In this example, let's suppose we're making our own cryptocurrency
+        called PowerShellCoin (PSCoin or PSC for short).   We can create a
+        [PSBlockchain] to implement it.  Because this is for demonstration
+        purposes, our blockchain will be a simple human-readable ledger.
+
+        PS C:\> $chain = [PSBlockchain]::new("Welcome to PSCoin!")
+        PS C:\> $chain.Add("Alice mined 50 PSC into her wallet.")
+        PS C:\> $chain.Add("Bob mined 50 PSC into his wallet.")
+        PS C:\> $chain.Add("Alice sent 25 PSC to Bob.")
+        PS C:\> $chain.Add("Bob sent 10 PSC to Chris.")
+
+        The blockchain can be verified at any time:
+            PS C:\> $chain.Verify()
+            True
+        
+        Any arbitrary block can be read as long as you know its ID number.
+        Blocks are numbered sequentially, and the genesis block is always
+        number 0.  (The blockchain can hold up to 2^64 blocks.)
+
+            PS C:\> $chain.GetBlock(2)         
+            Name          Value
+            ----          -----
+            Version       1
+            BlockID       2
+            Timestamp     132120434319335190
+            PrevBlockHash 87A938599211B54F1FEA0D9786FB4AD0D0A8243DBE3710E82F2CE7F840EC5376
+            Nonce         LuwSGjUaoAKBrRTbFkecJZxfCPMyvHnp
+            Content       Bob mined 50 PSC into his wallet.
+            Hash          3997F88BC627988564A5E70AE15B4CF600EFD0F9DB9DB3BC79EFF0318F4CAFBF
+
+    EXAMPLE 2: ROLL YOUR OWN VOTING MACHINE
+        In this example, let's assume you are creating a voting machine in
+        PowerShell.  Your front-end app confirms the user's vote, and then
+        adds his/her votes to the blockchain.   You want to write only one
+        PowerShell module to replay the blockchain and count votes, so you
+        embed PowerShell objects into each block to store your data. 
+        
+        Start by creating a blockchain.
+            PS C:\> $votes = [PSBlockchain]::new(@{
+                ElectionName = "Town of Shellford municipal elections.";
+                ElectionDay  = (Get-Date "November 5, 2019");
+                PollLocation = "Town Hall";
+                Candidates   = @(
+                    @{Office="Mayor"; Candidates=@("John Jackson", "Jack Johnson")},
+                    @{Office="Zoning Board"; Candidates=@("Alice", "Bob")}
+                );
+                Referendums  = @( @{
+                    Question="Should the community center be renovated?";
+                    Options=@("Yes","No")
+                })
+            })
+        
+        Collect some votes.
+            PS C:\> $votes.Add(@(
+                @{Office="Mayor"; Vote="John Jackson"},
+                @{Office="Zoning Board"; Vote="Alice"},
+                @{Question="Should the community center be renovated?"; Answer="Yes"}
+            ))
+            PS C:\> $votes.Add(@(
+                @{Office="Mayor"; Vote="Jack Johnson"},
+                @{Office="Zoning Board"; Vote="Bob"},
+                @{Question="Should the community center be renovated?"; Answer="Yes"}
+            ))
+            PS C:\> $votes.Add(@(
+                @{Office="Mayor"; Vote="Jack Johnson"},
+                @{Office="Zoning Board"; Vote="Alice"}
+            ))
+        
+        Make sure the voting machine hasn't been tampered with.
+            PS C:\> $votes.Verify()
+            True
+        
+        Read some results. (Assume you have )
+            PS C:\> $votes.GetGenesisBlock().GetContent().ElectionName
+            Town of Shellford municipal elections.
+
+            PS C:\> Import-Module YourVoteCounter -Cmdlet Get-VoteTotals
+            PS C:\> $votes | Get-VoteTotals -Office "Mayor"
+            Name                Votes   Status
+            ----                -----   ------
+            Jack Johnson        2       Winner.
+            John Jackson        1
+
+
+KEYWORDS
+    Blockchain
+    Cryptocoin
+    Cryptocurrency
+    PowerShell
+    PowerShell Core
+    Windows PowerShell
+
+SEE ALSO
+    about_Classes
+    about_PSBlockchainBlock
